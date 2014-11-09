@@ -2,7 +2,7 @@
 Generalized Accelerated Particle Swarm Optimization Module
 -APSO allows for optimization of bound-constrained problems
 
-Code is built from Xin-She Yang, "Nature-Inspired Metaheuristic Algorithms",
+Code is based off of Xin-She Yang, "Nature-Inspired Metaheuristic Algorithms",
 Second Edition, Luniver Press, (2010).   www.luniver.com
 
 Nelson, J. (2014)
