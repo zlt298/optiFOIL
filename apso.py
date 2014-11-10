@@ -60,9 +60,9 @@ class Swarm(object):
     
     def set_control_param(self,alpha_0 = 1,beta = 0.5, gamma = 0.7):
         """Change the control parameters of the swarm"""
-        self.beta = beta
-        self.gamma = gamma
-        self.alpha_0 = alpha_0
+        self.beta           = beta
+        self.gamma          = gamma
+        self.alpha_0        = alpha_0
 
     def create_logfile(self):
         """
@@ -145,22 +145,22 @@ class Particle(Swarm):
     parameters, and an optional fixed position.
     """
     def __init__(self, eval_function, bounds, starting_position = None):
-        self.eval_function = eval_function
-        self.bounds        = bounds
-        self.nparam        = len(self.bounds)
-        self.lb            = np.array([i[0] for i in self.bounds])
-        self.ub            = np.array([i[1] for i in self.bounds])
-        self.r             = self.ub - self.lb
+        self.eval_function  = eval_function
+        self.bounds         = bounds
+        self.nparam         = len(self.bounds)
+        self.lb             = np.array([i[0] for i in self.bounds])
+        self.ub             = np.array([i[1] for i in self.bounds])
+        self.r              = self.ub - self.lb
 
         if starting_position: #If seeded Particle
-            self.position = np.array(starting_position)
+            self.position   = np.array(starting_position)
         else:                 #If unseeded Particle
-            temp = (rand(1,self.nparam))[0]
-            self.position = self.lb + np.multiply(temp,self.r)
+            temp            = (rand(1,self.nparam))[0]
+            self.position   = self.lb + np.multiply(temp,self.r)
         self.fix_bound()
 
-        self.prevposition = self.position
-        self.eval = 0
+        self.prevposition   = self.position
+        self.eval           = 0
 
     def __del__(self): pass #Overwrite parent
 
