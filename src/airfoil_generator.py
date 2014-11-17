@@ -18,25 +18,19 @@ Where gene is the list:
 def bernstein_poly(i, n, t):
     return comb(n, i) * ( t**(n-i) ) * (1 - t)**i
 
-def bezier_curve(points, points_per_curve = 60):
+def bezier_curve(points, points_per_curve = 61):
     nPoints = len(points)
     xPoints = points[:,0]
     yPoints = points[:,1]
 
     t = np.linspace(0.0, 1.0, points_per_curve)
-
     polynomial_array = np.array([ bernstein_poly(i, nPoints-1, t) for i in range(0, nPoints)   ])
-
-    print len(xPoints)
-    print len(polynomial_array)
-    print xPoints
-    print polynomial_array
     xvals = np.dot(xPoints, polynomial_array)
     yvals = np.dot(yPoints, polynomial_array)
 
     return xvals, yvals
 
-def generate_airfoil(gene,name, points_per_curve = 60):
+def generate_airfoil(gene,name, points_per_curve = 61):
     xx = np.zeros((7,))
     xx[1:] = np.linspace(0,1,6)
     y_up = np.array([0.0,
@@ -57,13 +51,13 @@ def generate_airfoil(gene,name, points_per_curve = 60):
     xy_dn = np.vstack((xx[:],y_dn)).transpose()
     xy_up = bezier_curve(xy_up,points_per_curve)
     xy_dn = bezier_curve(xy_dn,points_per_curve)
-    
-    with open(name+".dat",'w') as foilfile:
+
+    with open(r"..\airfoils\%s.dat"%name,'w') as foilfile:
         foilfile.write(name+"\n")
-        for i in range (points_per_curve,0,-1):
-             foilfile.write(  " %1.6f    %1.6f\n" %(xy_up[i,0],xy_up[i,1]))
-        for i in range (0,points_per_curve+1):
-             foilfile.write(  " %1.6f    %1.6f\n" %(xy_dn[i,0],xy_dn[i,1]))
+        for i in range (points_per_curve-1):
+             foilfile.write(  " %1.6f    %1.6f\n" %(xy_up[0][i],xy_up[1][i]))
+        for i in range (points_per_curve-1,-1,-1):
+             foilfile.write(  " %1.6f    %1.6f\n" %(xy_dn[0][i],xy_dn[1][i]))
         foilfile.close()
 
 

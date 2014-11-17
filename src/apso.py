@@ -75,7 +75,7 @@ class Swarm(object):
             filecount = max([ int(f.split('.')[0]) for f in os.listdir(".") if f.endswith(".apso")])
         except (ValueError):
             filecount = -1
-        return open("%04.i.apso"%(filecount+1),'w')
+        return open("log%04.i.apso"%(filecount+1),'w')
 
     def seed_from_log(self,log_name,seeds_from_end):
         """

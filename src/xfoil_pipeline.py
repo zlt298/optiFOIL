@@ -47,14 +47,14 @@ class XFPype(object):
         return None
     
     def run_analysis(self,proc,name, Ncrit, Re, alpha):
-        proc.stdin.write(r"load ..\airfoils\\"+name+'.dat'   +'\n')
+        proc.stdin.write(r"load ..\airfoils\\"+name+'.dat'  +'\n')
         proc.stdin.write('OPER'                             +'\n')
         proc.stdin.write('Vpar'                             +'\n')
         proc.stdin.write('N %i'%Ncrit                       +'\n')
         proc.stdin.write(' '                                +'\n')
         proc.stdin.write('visc %i'%Re                       +'\n')
         proc.stdin.write('PACC'                             +'\n')
-        proc.stdin.write(r"..\airfoils\\"+name+'.log'        +'\n')
+        proc.stdin.write(r"..\airfoils\\"+name+'.log'       +'\n')
         proc.stdin.write(' '                                +'\n')
         proc.stdin.write(alpha                              +'\n')
         proc.stdin.write(' '                                +'\n')
@@ -71,15 +71,16 @@ if __name__ == '__main__':
     #For 8 alpha angles:
         #single thread : 0.617s
         #8 threads     : 0.371s
+    xf = XFPype('test',5,150000,mthread = False)
     
     import time
     tic = time.time()
-    b = XFPype('manini v4',5,150000,mthread = True)
+    b = XFPype('test',5,150000,mthread = True)
     toc = time.time()
     print toc-tic
     
 ##    tic = time.time()
-##    a = XFPype('manini v4',5,150000)
+##    a = XFPype('test',5,150000)
 ##    toc = time.time()
 ##    print toc-tic
     
