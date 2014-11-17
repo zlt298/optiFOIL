@@ -10,7 +10,7 @@ class XFPype(object):
     
     """
     
-    xfoilpath = r'.\xfoil.exe'
+    xfoilpath = r'..\bin\xfoil.exe'
     
     def __init__(self, name, Ncrit, Re, set_alpha = (1,4,1), mthread = False):
         """
@@ -47,14 +47,14 @@ class XFPype(object):
         return None
     
     def run_analysis(self,proc,name, Ncrit, Re, alpha):
-        proc.stdin.write(r"load .\airfoils\\"+name+'.dat'   +'\n')
+        proc.stdin.write(r"load ..\airfoils\\"+name+'.dat'   +'\n')
         proc.stdin.write('OPER'                             +'\n')
         proc.stdin.write('Vpar'                             +'\n')
         proc.stdin.write('N %i'%Ncrit                       +'\n')
         proc.stdin.write(' '                                +'\n')
         proc.stdin.write('visc %i'%Re                       +'\n')
         proc.stdin.write('PACC'                             +'\n')
-        proc.stdin.write(r".\airfoils\\"+name+'.log'        +'\n')
+        proc.stdin.write(r"..\airfoils\\"+name+'.log'        +'\n')
         proc.stdin.write(' '                                +'\n')
         proc.stdin.write(alpha                              +'\n')
         proc.stdin.write(' '                                +'\n')
