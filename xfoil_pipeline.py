@@ -1,48 +1,86 @@
 import subprocess as sp
-import os
-import sys
-import string
-#import time
-
-
-
-
+import os,string
+from threading import Thread
 
 class XFPype(object):
     """
     XFoil Pipeline Object
     Provides functions for running XFOIL commands through python
+    
+    
     """
     
-    xfoilpath = r'C:\Users\Jeff\Desktop\ME 481\Optifoil\XFOIL6.99\xfoil.exe'
-    alpha = 'aseq 0.9 1.0 0.1\ninit\naseq 1.9 2.0 0.1\ninit\naseq 2.9 3.0 0.1\ninit\naseq 3.9 4.0 0.1'
+    xfoilpath = r'.\xfoil.exe'
     
-    def __init__(self):
-        self.process = sp.Popen(xfoilpath ,stdin=sp.PIPE,stderr=sp.PIPE,stdout=sp.PIPE)
+    def __init__(self, name, Ncrit, Re, set_alpha = (1,4,1), mthread = False):
+        """
+        name        = name of dat file as string (without the .dat)
+        Ncrit       = Parameter that defines the quality of the boundary layer (See Xfoil documentation for details)
+        Re          = Reynolds Number
+        set_alpha   = Tuple with (start,end,step) alpha range (all as integers)
+        mthread     = enable/disable multithreading
 
-    def cmd(self,s):
+        The calculations will be run on initialization, and the output will be spitout to a logfile (name.log)
+        """
+        self.set_alpha(*set_alpha)
+
+        if mthread: #Multithreading option
+            procs = []
+            threads = []
+            for ind,alpha in enumerate(self.alpha_list):
+                procs.append(sp.Popen(self.xfoilpath ,stdin=sp.PIPE,stderr=sp.PIPE,stdout=sp.PIPE))
+                def f():
+                    self.run_analysis(procs[-1],name,Ncrit,Re,alpha)
+                t = Thread(target=f)
+                t.daemon = True
+                t.start()
+                threads.append(t)
+            [t.join() for t in threads]
+        else:
+            process = sp.Popen(self.xfoilpath ,stdin=sp.PIPE,stderr=sp.PIPE,stdout=sp.PIPE)
+            self.run_analysis(process,name,Ncrit,Re,self.alpha)
+
+    def set_alpha(self,start,stop,step):
+        self.alpha_list = ['aseq %4.2f %4.2f 0.1'%(x-0.1,x) for x in range(start,stop+step,step)]
+        self.alpha_count = len(self.alpha_list)
+        self.alpha = '\ninit\n'.join(self.alpha_list)
+        return None
+    
+    def run_analysis(self,proc,name, Ncrit, Re, alpha):
+        proc.stdin.write(r"load .\airfoils\\"+name+'.dat'   +'\n')
+        proc.stdin.write('OPER'                             +'\n')
+        proc.stdin.write('Vpar'                             +'\n')
+        proc.stdin.write('N %i'%Ncrit                       +'\n')
+        proc.stdin.write(' '                                +'\n')
+        proc.stdin.write('visc %i'%Re                       +'\n')
+        proc.stdin.write('PACC'                             +'\n')
+        proc.stdin.write(r".\airfoils\\"+name+'.log'        +'\n')
+        proc.stdin.write(' '                                +'\n')
+        proc.stdin.write(alpha                              +'\n')
+        proc.stdin.write(' '                                +'\n')
+        out, err = proc.communicate('quit\n')
+        proc.stderr.close()
+        proc.stdin.close()
+        proc.stdout.close()
+        proc.wait()
+
         
-        
-def XFPy(name, Ncrit, Re):
-    def Cmd(cmd):
-        ps.stdin.write(cmd+'\n')
-    ps = sp.Popen(xfoilpath ,stdin=sp.PIPE,stderr=sp.PIPE,stdout=sp.PIPE)
-    Cmd('load '+name+'.dat')
-    Cmd('OPER')
-    Cmd('Vpar') #change boundary layer options
-    Cmd('N '+str(Ncrit)) #plot amplification parameter
-    Cmd(' ')
-    Cmd('visc '+str(Re))
-    Cmd('PACC')
-    Cmd(name+'.log')  # output file
-    Cmd(' ')          # no dump file
-    Cmd(alpha)
-    Cmd(' ')
-    out, err = ps.communicate('quit\n')
-    #if 'Convergence' in out: print out
-    #print out
-    #Cmd('quit')  # exit
-    ps.stderr.close()
-    ps.stdin.close()
-    ps.stdout.close()
-    ps.wait()
+if __name__ == '__main__':
+    #Test speed difference between single and multithreading
+    #delete the log file before each run; comment out and only run one at a time for accurate results.
+    #For 8 alpha angles:
+        #single thread : 0.617s
+        #8 threads     : 0.371s
+    
+    import time
+    tic = time.time()
+    b = XFPype('manini v4',5,150000,mthread = True)
+    toc = time.time()
+    print toc-tic
+    
+##    tic = time.time()
+##    a = XFPype('manini v4',5,150000)
+##    toc = time.time()
+##    print toc-tic
+    
+    
