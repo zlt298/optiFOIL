@@ -72,7 +72,7 @@ class Swarm(object):
         etc...
         """
         try:
-            filecount = max([ int(f.split('.')[0]) for f in os.listdir(".") if f.endswith(".apso")])
+            filecount = max([ int(f[3:7]) for f in os.listdir(".") if f.endswith(".apso")])
         except (ValueError):
             filecount = -1
         return open("log%04.i.apso"%(filecount+1),'w')

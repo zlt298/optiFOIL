@@ -16,14 +16,7 @@ import numpy as np
 gen_max = [  0.100,  0.100,   0.10,  0.10,   0.10,  0.10,    0.10,  0.10,  0.10,  0.10 ]
 gen_min = [  0.035,  0.035,   0.00,  0.00,   0.00,  0.00,    0.065,  0.04,  0.015,  0.015 ]
 
-def eval_function(*args):    
-    LEU,LED,C20,C40,C60,C80,T20,T40,T60,T80 = args
-    gen = [LEU,LED,C20,C40,C60,C80,T20,T40,T60,T80]
-    name = '%06d' %len([ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ])
-    generate_airfoil(gen,name)
-    xf = XFPype(name,Ncrit,Re,mthread = True)
-
-    #Evaluation Criterion
+def eval_function(*args):
     f = open(r"..\airfoils\%s.log"%name, 'r')
     lines = f.readlines()
     LatLDmax = 0
@@ -43,23 +36,5 @@ def eval_function(*args):
             
     LDmax = LDmax if count == 4 else 0
     
-    print name
-    print LDmax,LatLDmax,Cm,'\n'
     return LDmax+(Cm*10)+LatLDmax*30
 
-# remove all files from last run
-filelist = [ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ]
-for f in filelist:
-    os.remove(os.path.abspath(r"..\airfoils\%s"%f))  
-filelist = [ f for f in os.listdir(r"..\airfoils") if f.endswith(".log") ]
-for f in filelist:
-    os.remove(os.path.abspath(r"..\airfoils\%s"%f))
-
-Re    = 150000
-Ncrit = 5
-
-niterations = 25 - 1 #first iteration is run at instantiation
-nparticles = 5
-
-s = apso.Swarm(eval_function,zip(gen_min,gen_max),nparticles,log_results = True)
-s.iterate(niterations)
