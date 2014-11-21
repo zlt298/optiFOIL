@@ -16,36 +16,34 @@ import numpy as np
 gen_max = [  0.100,  0.100,   0.10,  0.10,   0.10,  0.10,    0.10,  0.10,  0.10,  0.10 ]
 gen_min = [  0.035,  0.035,   0.00,  0.00,   0.00,  0.00,    0.065,  0.04,  0.015,  0.015 ]
 
+def log_eval(name, average_results = False, CL_reward = 30, CM_penalty = 10):
+    f = open(r"..\airfoils\%s.log"%name, 'r')
+    lines = f.readlines()
+    LDmax,LatLDmax,CM,count = 0,0,0,0
+    for i in range(12,len(lines)):
+        LD = 0
+        words = [float(x) for x in string.split(lines[i])]
+        if words[0] in [1.0 , 2.0 , 3.0 , 4.0]:
+            LD = words[1]/words[2]
+            count += 1
+            if words[4]<CM:
+                CM = words[4]      
+        if LD > LDmax:
+            LDmax = LD
+            LatLDmax = words[1]
+    LDmax = LDmax if count == 4 else 0
+    score = LDmax+(CM*CM_penalty)+LatLDmax*CL_reward
+    print 'Airfoil  Number: '+str(name)
+    print '          Score: %5.3f\n        Max L/D: %5.3f\nLift at Max L/D: %5.4f'%(score,LDmax,LatLDmax),'\n'
+    return score
+
 def eval_function(*args):    
     LEU,LED,C20,C40,C60,C80,T20,T40,T60,T80 = args
     gen = [LEU,LED,C20,C40,C60,C80,T20,T40,T60,T80]
     name = '%06d' %len([ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ])
     generate_airfoil(gen,name)
-    xf = XFPype(name,Ncrit,Re,mthread = True)
-
-    #Evaluation Criterion
-    f = open(r"..\airfoils\%s.log"%name, 'r')
-    lines = f.readlines()
-    LatLDmax = 0
-    LDmax,LD,count = 0,0,0
-    Cm = 0
-    for i in range(12,len(lines)):
-        words = string.split(lines[i])
-        LD = 0
-        if float(words[0]) in [1.0,2.0,3.0,4.0]:
-            LD = float(words[1])/float(words[2])
-            count += 1
-            if float(words[4])<Cm:
-                Cm = float(words[4])      
-        if LD > LDmax:
-            LDmax = LD
-            LatLDmax = float(words[1])
-            
-    LDmax = LDmax if count == 4 else 0
-    
-    print name
-    print LDmax,LatLDmax,Cm,'\n'
-    return LDmax+(Cm*10)+LatLDmax*30
+    xf = XFPype(name,Ncrit,Re,mthread = False)
+    return log_eval(name)
 
 # remove all files from last run
 filelist = [ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ]
@@ -58,8 +56,10 @@ for f in filelist:
 Re    = 150000
 Ncrit = 5
 
-niterations = 25 - 1 #first iteration is run at instantiation
-nparticles = 5
+niterations = 30 - 1 #first iteration is run at instantiation
+nparticles = 5000
 
 s = apso.Swarm(eval_function,zip(gen_min,gen_max),nparticles,log_results = True)
+s.set_control_param(alpha_0 = 0.05,gamma = 0.9)
 s.iterate(niterations)
+
