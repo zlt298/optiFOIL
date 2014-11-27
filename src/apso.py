@@ -84,7 +84,7 @@ class Swarm(object):
         Reevaluate the swarm after appending
         """
         seedlist = []
-        with open('%s.apso'%log_name, 'r') as seed_log:
+        with open('log%s.apso'%log_name, 'r') as seed_log:
             for line in seed_log:
                 try:
                     seedlist.append([float(x) for x in line.split(";")[0].split(",")])
@@ -221,3 +221,5 @@ if __name__ == "__main__":
 ##    s.seed_from_log('0000',100)
 ##    s.iterate(100)
 ##    print s.get_best()
+
+    
