@@ -5,15 +5,6 @@ from xfoil_pipeline import *
 import os
 import numpy as np
 
-# remove all files from last run
-#Do not Edit
-filelist = [ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ]
-for f in filelist:
-    os.remove(os.path.abspath(r"..\airfoils\%s"%f))  
-filelist = [ f for f in os.listdir(r"..\airfoils") if f.endswith(".log") ]
-for f in filelist:
-    os.remove(os.path.abspath(r"..\airfoils\%s"%f))
-
 # Airfoil is defined by
 #  LEU = Leading edge up        LED = Leading edge down      
 #  C20 = Camber at 20%          T20 = Thickness at 20%
@@ -69,12 +60,23 @@ def eval_function(*args):
     xf = XFPype(name,Ncrit,Re,set_alpha = alpha_sequence, mthread = True)
     return log_eval(name)
 
-s = apso.Swarm(eval_function,zip(gen_min,gen_max),nparticles,log_results = True)
-s.set_control_param(alpha_0 = 0.05,gamma = 0.9)
-s.iterate(niterations)
-#Return the best of the population
-eval_function(*s.global_best)
-name = '%06d' %(len([ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ])-1)
+if __name__ == '__main__':
+    # remove all files from last run
+    #Do not Edit==============================================================
+    filelist = [ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ]
+    for f in filelist:
+        os.remove(os.path.abspath(r"..\airfoils\%s"%f))  
+    filelist = [ f for f in os.listdir(r"..\airfoils") if f.endswith(".log") ]
+    for f in filelist:
+        os.remove(os.path.abspath(r"..\airfoils\%s"%f))
+    #Do not Edit==============================================================
+    
+    s = apso.Swarm(eval_function,zip(gen_min,gen_max),nparticles,log_results = True)
+    s.set_control_param(alpha_0 = 0.05,gamma = 0.9)
+    s.iterate(niterations)
+    #Return the best of the population
+    eval_function(*s.global_best)
+    name = '%06d' %(len([ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ])-1)
 
-##s = apso.Swarm(eval_function,zip(gen_min,gen_max),0)
-##s.seed_from_log('0004',5000)
+    ##s = apso.Swarm(eval_function,zip(gen_min,gen_max),0)
+    ##s.seed_from_log('0004',5000)

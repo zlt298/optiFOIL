@@ -1,40 +1,99 @@
+import os,csv
+import numpy as np
+
+from optiFOIL import log_eval,alpha_sequence,Re,Ncrit
 import apso
 from airfoil_generator import generate_airfoil
 from xfoil_pipeline import *
 
-import os
-import numpy as np
+class XFPype_indepth(XFPype):
+    """Extend XFPype for a more in-depth analysis of a single airfoil,mthread disallowed"""
+    def __init__(self, name, Ncrit, Re, set_alpha = (-15,15,0.1)):
+        self.set_alpha(*set_alpha)
+        procs = []
+        threads = []
+        for ind,alpha in enumerate(self.alpha_list):
+            process = sp.Popen(self.xfoilpath ,stdin=sp.PIPE,stderr=sp.PIPE,stdout=sp.PIPE)
+            out = self.run_analysis(process,name,Ncrit,Re,alpha)
+            if "VISCAL:  Convergence failed" in out:
+                print "Convergence failed on alpha = %s, skipping..."%alpha
 
-# Airfoil is defined by
-#  LEU = Leading edge up            LED = Leading edge down      
-#  C20 = Camber at 20%              T20 = Thickness at 20%
-#  C40 = Camber at 40%              T40 = Thickness at 40%
-#  C60 = Camber at 60%              T60 = Thickness at 60%
-#  C80 = Camber at 80%              T80 = Thickness at 80%
+    def set_alpha(self,start,stop,step):
+        self.alpha_float = np.linspace(start,stop,(stop-start+step)/step)
+        self.alpha_list = ['aseq %4.2f %4.2f 0.1'%(x-0.1,x) for x in self.alpha_float]
+        self.alpha_count = len(self.alpha_list)
+        self.alpha = '\ninit\n'.join(self.alpha_list)
+        return None    
 
-#            LEU     LED      C20    C40     C60    C80      T20    T40    T60    T80
-gen_max = [  0.100,  0.100,   0.10,  0.10,   0.10,  0.10,    0.10,  0.10,  0.10,  0.10 ]
-gen_min = [  0.035,  0.035,   0.00,  0.00,   0.00,  0.00,    0.065,  0.04,  0.015,  0.015 ]
+    def run_analysis(self,proc,name, Ncrit, Re, alpha):
+        proc.stdin.write(r"load ..\airfoils\\"+name+'.dat'  +'\n')
+        proc.stdin.write('OPER'                             +'\n')
+        proc.stdin.write('Vpar'                             +'\n')
+        proc.stdin.write('N %i'%Ncrit                       +'\n')
+        proc.stdin.write(' '                                +'\n')
+        proc.stdin.write('ITER 70'                          +'\n')
+        proc.stdin.write('visc %i'%Re                       +'\n')
+        proc.stdin.write('PACC'                             +'\n')
+        proc.stdin.write(r"..\airfoils\\"+name+'.log'       +'\n')
+        proc.stdin.write(' '                                +'\n')
+        proc.stdin.write(alpha                              +'\n')
+        proc.stdin.write(' '                                +'\n')
+        out, err = proc.communicate('quit\n')
+        proc.stderr.close()
+        proc.stdin.close()
+        proc.stdout.close()
+        proc.wait()
+        return out
 
-def eval_function(*args):
-    f = open(r"..\airfoils\%s.log"%name, 'r')
-    lines = f.readlines()
-    LatLDmax = 0
-    LDmax,LD,count = 0,0,0
-    Cm = 0
-    for i in range(12,len(lines)):
-        words = string.split(lines[i])
-        LD = 0
-        if float(words[0]) in [1.0,2.0,3.0,4.0]:
-            LD = float(words[1])/float(words[2])
-            count += 1
-            if float(words[4])<Cm:
-                Cm = float(words[4])      
-        if LD > LDmax:
-            LDmax = LD
-            LatLDmax = float(words[1])
-            
-    LDmax = LDmax if count == 4 else 0
-    
-    return LDmax+(Cm*10)+LatLDmax*30
+latest_log = 'log%04d.apso' %(len([ f for f in os.listdir(r".") if f.endswith(".apso") ])-1)
+latest_airfoil = '%06d' %(len([ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ])-1)
 
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+def convergence_history():
+    """Plot the non-zero hueristic scores for the most recent optiFOIL run."""
+    log = open(latest_log,'r')
+    score = []
+    for line in log:
+        temp = float(line.split(';')[-1])
+        if temp == 0:score.append(-1)
+        else: score.append(temp)
+    plt.plot(range(len(score)),score,'.b',label = 'Score')
+    plt.plot([0,len(score)],[max(score),max(score)],'--r',label ='Maximum')
+    plt.legend(loc = 'lower right')
+    plt.title('Airfoil Convergence History')
+    plt.ylabel('Score')
+    plt.xlabel('Evaluation #')
+    plt.ylim([0,int(max(score)*1.1)])
+    plt.show()
+    return None
+
+def logPlots(name,alphalist):
+    f = open(r"..\airfoils\\"+name+'.log', 'r')
+    flines = f.readlines()
+    data = []
+    for i in range(12,len(flines)):
+        words = [float(x) for x in string.split(flines[i])]
+        a,Cl,Cd,Cdp,Cm = tuple(words[:5])
+        if float(a) in alphalist:
+            data.append((a,Cl,Cd,Cl/Cd,Cm))
+    data = sorted(list(set(data)))
+    data.insert(0,('Alpha','Cl','Cd','Cl/Cd','Cm'))
+    with open(name+' result.csv', 'w+b') as csvfile:
+        cw = csv.writer(csvfile, delimiter=',',quoting=csv.QUOTE_NONE)
+        for line in data:
+            cw.writerow([str(x) for x in line])
+    return data
+
+def full_analysis():
+    xf = XFPype_indepth(latest_airfoil,Ncrit,Re)
+    alist = xf.alpha_float
+    data = logPlots(latest_airfoil,alist)
+    print data
+    return None
+
+
+
+if __name__ == '__main__':
+    convergence_history()
+    #print full_analysis()
