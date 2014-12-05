@@ -15,15 +15,23 @@ for f in filelist:
     os.remove(os.path.abspath(r"..\airfoils\%s"%f))
 
 # Airfoil is defined by
-#  LEU = Leading edge up            LED = Leading edge down      
-#  C20 = Camber at 20%              T20 = Thickness at 20%
-#  C40 = Camber at 40%              T40 = Thickness at 40%
-#  C60 = Camber at 60%              T60 = Thickness at 60%
-#  C80 = Camber at 80%              T80 = Thickness at 80%
+#  LEU = Leading edge up        LED = Leading edge down      
+#  C20 = Camber at 20%          T20 = Thickness at 20%
+#  C40 = Camber at 40%          T40 = Thickness at 40%
+#  C60 = Camber at 60%          T60 = Thickness at 60%
+#  C80 = Camber at 80%          T80 = Thickness at 80%
 
 #         [  LEU     LED      C20     C40      C60     C80       T20     T40     T60     T80  ]
 gen_max = [ 0.100,  0.100,   0.100,  0.100,   0.100,  0.100,    0.100,  0.100,  0.100,  0.100 ]
 gen_min = [ 0.035,  0.035,   0.000,  0.000,   0.000,  0.000,    0.065,  0.040,  0.015,  0.015 ]
+
+alpha_sequence = (1 , 4, 1) #Use integers, (Start, End, Step) 
+
+Re    = 150000
+Ncrit = 5
+
+niterations = 30 - 1 #first iteration is run at instantiation
+nparticles = 5
 
 def log_eval(name, average_results = False, CL_reward = 30, CM_penalty = 10):
     """
@@ -38,7 +46,7 @@ def log_eval(name, average_results = False, CL_reward = 30, CM_penalty = 10):
     for i in range(12,len(lines)):
         LD = 0
         words = [float(x) for x in string.split(lines[i])]
-        if words[0] in [1.0 , 2.0 , 3.0 , 4.0]:
+        if words[0] in [float(x) for x in range(alpha_sequence[0],alpha_sequence[0]+1,alpha_sequence[0])]:
             LD = words[1]/words[2]
             count += 1
             if words[4]<CM:
@@ -58,20 +66,15 @@ def eval_function(*args):
     gen = [LEU,LED,C20,C40,C60,C80,T20,T40,T60,T80]
     name = '%06d' %len([ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ])
     generate_airfoil(gen,name)
-    xf = XFPype(name,Ncrit,Re,mthread = True)
+    xf = XFPype(name,Ncrit,Re,set_alpha = alpha_sequence, mthread = True)
     return log_eval(name)
-
-Re    = 150000
-Ncrit = 5
-
-niterations = 30 - 1 #first iteration is run at instantiation
-nparticles = 5
 
 s = apso.Swarm(eval_function,zip(gen_min,gen_max),nparticles,log_results = True)
 s.set_control_param(alpha_0 = 0.05,gamma = 0.9)
 s.iterate(niterations)
 #Return the best of the population
 eval_function(*s.global_best)
+name = '%06d' %(len([ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ])-1)
 
 ##s = apso.Swarm(eval_function,zip(gen_min,gen_max),0)
 ##s.seed_from_log('0004',5000)

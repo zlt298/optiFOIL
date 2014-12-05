@@ -6,8 +6,6 @@ class XFPype(object):
     """
     XFoil Pipeline Object
     Provides functions for running XFOIL commands through python
-    
-    
     """
     
     xfoilpath = r'..\bin\xfoil.exe'
