@@ -8,7 +8,7 @@ from xfoil_pipeline import *
 
 class XFPype_indepth(XFPype):
     """Extend XFPype for a more in-depth analysis of a single airfoil,mthread disallowed"""
-    def __init__(self, name, Ncrit, Re, set_alpha = (-15,15,0.1)):
+    def __init__(self, name, Ncrit, Re, set_alpha = (-16,16,0.1)):
         self.set_alpha(*set_alpha)
         procs = []
         threads = []
@@ -78,22 +78,100 @@ def logPlots(name,alphalist):
         if float(a) in alphalist:
             data.append((a,Cl,Cd,Cl/Cd,Cm))
     data = sorted(list(set(data)))
-    data.insert(0,('Alpha','Cl','Cd','Cl/Cd','Cm'))
     with open(name+' result.csv', 'w+b') as csvfile:
         cw = csv.writer(csvfile, delimiter=',',quoting=csv.QUOTE_NONE)
+        cw.writerow(('Alpha','Cl','Cd','Cl/Cd','Cm'))
         for line in data:
             cw.writerow([str(x) for x in line])
     return data
 
+def airfoil_properties(chord = 1.):
+    """Get parameters of newest airfoil (perimeter, area, maximum thickness)"""
+    from airfoil_generator import generate_airfoil
+    def polyArea(xx,yy):
+        """Loop integral to find Polygon Area, order matters"""
+        Itotal = 0
+        for ind in range(len(xx)-1):
+            Itotal += 0.5*(yy[ind+1]+yy[ind])*(xx[ind+1]-xx[ind])
+        Itotal += 0.5*(yy[0]+yy[-1])*(xx[0]-xx[-1])    
+        return Itotal
+    def polyPeri(xx,yy):
+        """Trivial Polygon Perimeter"""
+        Ltotal = 0
+        for ind in range(len(xx)-1):
+            Ltotal += np.sqrt((yy[ind+1]-yy[ind])**2+(xx[ind+1]-xx[ind])**2)
+        Ltotal += np.sqrt((yy[0]-yy[-1])**2+(xx[0]-xx[-1])**2) 
+        return Ltotal
+    gene = [float(i) for i in open(latest_log,'r').readlines()[-1].split(';')[0].split(',')]
+    generate_airfoil(gene,latest_airfoil,181) #increase fidelity of airfoil
+    with open(r"..\airfoils\%s.dat"%latest_airfoil,'r') as foilfile:
+        x,y = [],[]
+        for ind,row in enumerate(foilfile):
+            if ind!=0:
+                x.append(float(row.split('    ')[0]))
+                y.append(float(row.split('    ')[1]))
+        foilfile.close()
+        x,y = [float(i)*chord for i in x][::-1],[float(i)*chord for i in y][::-1]
+    peri,area = polyPeri(x,y),polyArea(x,y)
+    max_thickness = max([(abs(y[ind]-y[360-ind])) for ind in range(180)])
+    plt.figure(figsize=(9,4),dpi=100)
+    plt.plot(x,y,'b',[chord*-0.1,chord*1.1],[0,0],'--k')
+    plt.axis('equal')
+    plt.xlim([chord*-0.1,chord*1.1])
+    plt.text(0,chord*-0.2,'Perimeter = %6.5f\nArea = %6.5f\nMax Thickness = %6.5f'%(peri,area,max_thickness))
+    plt.savefig('Airfoil Geometry')
+    plt.clf()
+    return peri,area,max_thickness
+
 def full_analysis():
     xf = XFPype_indepth(latest_airfoil,Ncrit,Re)
-    alist = xf.alpha_float
+    alist = xf.alpha_float    
     data = logPlots(latest_airfoil,alist)
-    print data
+    alpha,cl,cd,ld,cm = zip(*data)
+    def plot_polar(xx,yy,title,xax,yax,maxY = False,minY = False):
+        plt.plot(xx,yy)
+        plt.title(title)
+        plt.xlabel(xax)
+        plt.ylabel(yax)
+        if maxY:
+            maxY = max(yy)
+            maxX = xx[yy.index(maxY)]
+            plt.axhline(maxY,color = 'k',linestyle = '--',label = 'Maximum Cl/Cd = %6.5f'%maxY)
+            plt.axvline(maxX,color = 'k',linestyle = '--',label = 'At Alpha = %4.3f'%maxX)
+            plt.legend(loc = 'lower center')
+            return maxX,maxY
+        if minY:
+            minY = min(yy)
+            minX = xx[yy.index(minY)]
+            plt.axvline(minX,color = 'k',linestyle = '--',label = 'Minimum Cd = %6.5f'%minY)
+            plt.legend(loc = 'upper center')
+            return minY
+        return None
+        
+    alphaAtmax,maxLD = plot_polar(alpha,ld,'Cl over Cd vs Alpha','Alpha [deg]','Cl/Cd',maxY = True)
+    plt.savefig('LD vs alpha')
+    plt.clf()
+
+    Cdmin = plot_polar(alpha,cd,'Cd vs Alpha','Alpha [deg]','Cd',minY = True)
+    plt.savefig('Cd vs alpha')
+    plt.clf()
+
+    plot_polar(alpha,cl,'Cl vs Alpha','Alpha [deg]','Cl')
+    plt.savefig('Cl vs alpha')
+    plt.clf()
+
+    plot_polar(alpha,cm,'Cm vs Alpha','Alpha [deg]','Cm')
+    plt.savefig('Cm vs alpha')
+    plt.clf()
+
+    plot_polar(cd,cl,'Cl vs Cd','Cd','Cl')
+    plt.savefig('Cl vs Cd')
+    plt.clf()
     return None
 
 
 
 if __name__ == '__main__':
     convergence_history()
-    #print full_analysis()
+    full_analysis(1)
+    airfoil_properties(chord = 5.5)

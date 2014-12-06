@@ -22,7 +22,7 @@ Re    = 150000
 Ncrit = 5
 
 niterations = 30 - 1 #first iteration is run at instantiation
-nparticles = 5
+nparticles = 10
 
 def log_eval(name, average_results = False, CL_reward = 30, CM_penalty = 10):
     """
@@ -77,6 +77,12 @@ if __name__ == '__main__':
     #Return the best of the population
     eval_function(*s.global_best)
     name = '%06d' %(len([ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ])-1)
+
+    from trial_analysis import *
+    del(s)
+    convergence_history()
+    full_analysis()
+    airfoil_properties(chord = 5.5)
 
     ##s = apso.Swarm(eval_function,zip(gen_min,gen_max),0)
     ##s.seed_from_log('0004',5000)
