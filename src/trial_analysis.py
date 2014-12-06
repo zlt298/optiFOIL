@@ -65,7 +65,8 @@ def convergence_history():
     plt.ylabel('Score')
     plt.xlabel('Evaluation #')
     plt.ylim([0,int(max(score)*1.1)])
-    plt.show()
+    #plt.show()
+    plt.savefig('Convergence History')
     return None
 
 def logPlots(name,alphalist):
@@ -173,5 +174,5 @@ def full_analysis():
 
 if __name__ == '__main__':
     convergence_history()
-    full_analysis(1)
+    full_analysis()
     airfoil_properties(chord = 5.5)
