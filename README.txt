@@ -113,4 +113,12 @@ will be the result of your optimization run.
 ===========================================================================================
 	3.Interpreting Results
 ===========================================================================================
-Coming Soon
+At the bottom of Optifoil.py is a section of code for running a post optimization airfoil
+analysis. This functionality can also be accessed from trial_analysis.py. After the import,
+the first line "del(s)" is to close the swarm and thus save the latest changes to the swarm
+log file. "convergence_history()" will save a png file showing the convergence of score
+over the latest optimization run (based on the .log file). "full_analysis()" will plot all
+of the relevant airfoil polars from the most successful airfoil and save the data as a .csv
+png's of the plots will be saved to the src folder as well. Finally, "airfoil_properties()"
+takes the airfoil's chord-length as an input, and outputs a .png file with the airfoil
+geometry, area, perimeter, and maximumthickness value. 

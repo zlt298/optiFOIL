@@ -78,11 +78,14 @@ if __name__ == '__main__':
     eval_function(*s.global_best)
     name = '%06d' %(len([ f for f in os.listdir(r"..\airfoils") if f.endswith(".dat") ])-1)
 
-    from trial_analysis import *
-    del(s)
-    convergence_history()
-    full_analysis()
-    airfoil_properties(chord = 5.5)
+    #Uncomment to run post optimization airfoil Analysis
+    #=========================================================================
+##    from trial_analysis import *
+##    del(s)
+##    convergence_history()
+##    full_analysis()
+##    airfoil_properties(chord = 5.5) #Be sure to edit the chord length here
+    #=========================================================================
 
     ##s = apso.Swarm(eval_function,zip(gen_min,gen_max),0)
     ##s.seed_from_log('0004',5000)
