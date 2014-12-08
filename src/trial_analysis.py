@@ -67,6 +67,7 @@ def convergence_history():
     plt.ylim([0,int(max(score)*1.1)])
     #plt.show()
     plt.savefig('Convergence History')
+    plt.clf()
     return None
 
 def logPlots(name,alphalist):

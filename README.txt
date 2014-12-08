@@ -6,6 +6,7 @@ By: Jeffrey Nelson
 	1.Aerodynamics Fundamentals
 	2.optiFOIL Controls
 	3.Interpreting Results
+	4.Technical Details
 
 Optifoil is a 2D airfoil geometry optimization solution which utilizes the 
 Accelerated Particle Swarm Optimization method to iteratively select an airfoil
@@ -122,3 +123,70 @@ of the relevant airfoil polars from the most successful airfoil and save the dat
 png's of the plots will be saved to the src folder as well. Finally, "airfoil_properties()"
 takes the airfoil's chord-length as an input, and outputs a .png file with the airfoil
 geometry, area, perimeter, and maximumthickness value. 
+
+
+===========================================================================================
+	4.Technical Details
+===========================================================================================
+apso.py - Fully functional and commented, with test cases
+    A module that allows for generalized optimization of bound-constrained problems using 
+the APSO method. The module also has the additional capability to create logfiles to store 
+the genes of each generation, and new swarms can use these genes as seed values. A neat 
+visualization of the APSO method in progress can be seen by running the 
+apso_visualization.py module. (This can be quite taxing on the graphics card)
+   
+The algorithm is modified from the matlab code found in:
+    Xin-She Yang, "Nature-Inspired Metaheuristic Algorithms", Second Edition, Luniver Press
+, (2010). www.luniver.com
+
+requires: numpy
+-------------------------------------------------------------------------------------------
+xfoil_pipeline.py - Functional, Commented
+   This module contains the XFPype object which will run the XFOIL commands necessary to 
+load an airfoil from a .dat file, set the environmental conditions as desired, and generate
+airfoil polar log files which are vital in the wing design process. This is not a 
+generalized XFOIL pipeline as it is only one way communication (receiving messages while 
+running a subprocess is horrifically slow) specific to airfoil polar generation.
+
+Code for the xfoil pipeline was modified from:
+    https://hakantiftikci.wordpress.com/2010/12/21/using-xfoil-and-automating-via-python-subprocess-module/
+   
+A major challenge was minimizing the runtime of this airfoil polar calculation. Ideally I 
+would like to suppress the graphical interface from appearing at all when I run the XFOIL 
+commands, but since I cannot figure out how to do that through the subprocess module, I 
+looked to other methods and found that I could cut calculation time nearly in half through 
+multi-threading. I divide the calculations that I want to do into smaller sections, then 
+open a xfoil subprocess to work on each subsection.
+
+requires: subprocess, threading, xfoil.exe (already in the \bin directory)
+-------------------------------------------------------------------------------------------
+airfoil_generator.py - Fully functional and commented, with test cases
+    This module uses a Bezier curve parameterization[1] to generate an airfoil coordinate 
+file (.dat) in an format that can be read by XFOIL. The airfoil is defined by 2 bezier 
+curve's for the upper and lower surface which are in turn defined by 10 different control 
+points which constitute the gene for one airfoil.
+
+Bezier Curve implementation from stackoverflow, user reptilicus:
+    http://stackoverflow.com/questions/12643079/b%C3%A9zier-curve-fitting-with-scipy?rq=1
+ [1]: http://pubs.sciepub.com/ajme/2/4/1/
+
+requires: numpy, scipy
+-------------------------------------------------------------------------------------------
+optiFOIL.py - Functional with comments,
+    This module ties together all of the pieces above to run airfoil optimization trials. 
+Most of the work that is left to do is in cleaning up the evaluation function and boundary 
+conditions which are both found in this module. At V1.1, running this file will begin a 
+small optimization trial of population size 5 iterated over 30 cycles for a Reynolds number
+of 150000, and an Ncrit value of 5 (should take <1 minute; it will rapidly open and close 
+windows which can be a strain on the eyes).
+
+requires: All of the above
+-------------------------------------------------------------------------------------------
+trial_analysis.py - Functional with comments,
+    This module is for analyzing the results of an optimization run. It will generate 7 
+plots and output some .csv data. The first plot is the convergence history of the 
+optimization run. The next is the geometry of the airfoil. Finally, the last 5 are airfoil
+polar graphs: alpha vs Cl/Cd, alpha vs Cl, alpha vs Cd, alpha vs Cm, Cd vs Cl. The csv file
+will output the data used to generate the airfoil polars.
+
+requires: All of the above + matplotlib
