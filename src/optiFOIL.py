@@ -22,7 +22,7 @@ Re    = 150000
 Ncrit = 5
 
 niterations = 30 - 1 #first iteration is run at instantiation
-nparticles = 10
+nparticles = 5000
 
 def log_eval(name, average_results = False, CL_reward = 30, CM_penalty = 10):
     """
@@ -37,7 +37,7 @@ def log_eval(name, average_results = False, CL_reward = 30, CM_penalty = 10):
     for i in range(12,len(lines)):
         LD = 0
         words = [float(x) for x in string.split(lines[i])]
-        if words[0] in [float(x) for x in range(alpha_sequence[0],alpha_sequence[0]+1,alpha_sequence[0])]:
+        if words[0] in [float(x) for x in range(alpha_sequence[0],alpha_sequence[1]+1,alpha_sequence[2])]:
             LD = words[1]/words[2]
             count += 1
             if words[4]<CM:
